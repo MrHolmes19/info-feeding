@@ -15,6 +15,7 @@ class Ingredient(models.Model):
     subgroup = models.CharField(max_length=50, null=True, blank=True)
     origin = models.CharField(max_length=50, null=True, blank=True)
     commercial_section = models.CharField(max_length=50, null=True, blank=True)
+    #allowed_units = models.TextField()
 
     edible_ptc = models.FloatField(default=1.0)
     density = models.FloatField(null=True, blank=True)
@@ -58,8 +59,6 @@ class Ingredient(models.Model):
     magnesium = models.FloatField(null=True, blank=True)
     total_minerals = models.FloatField(null=True, blank=True)
     
-
-
     def __str__(self):
         return self.name
 
@@ -123,6 +122,3 @@ class Food(models.Model):
     phosphorus = models.FloatField(null=True, blank=True)
     magnesium = models.FloatField(null=True, blank=True)
     total_minerals = models.FloatField(null=True, blank=True)
-    
-
-

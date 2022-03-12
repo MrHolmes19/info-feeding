@@ -1,6 +1,7 @@
+import json
 from django.shortcuts import render
 from api.serializers import IngredientSerializer, FoodSerializer
-from api.utils import filterIngredients, filterFood, ingredientsSummarize
+from api.utils import *
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
@@ -14,7 +15,7 @@ class IngredientView(APIView):
         ingredients = Ingredient.objects.all()
 
         ingredients = filterIngredients(request, ingredients)
-        print(len(ingredients))
+        #print(len(ingredients))
 
         serializer = IngredientSerializer(ingredients, many=True)
         return Response(serializer.data)
@@ -26,6 +27,7 @@ class IngredientView(APIView):
         serializer = IngredientSerializer(data=data)
         if serializer.is_valid():
             serializer.save()
+            print(serializer.data)
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         else:
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
@@ -38,9 +40,7 @@ class IngredientDetailView(APIView):
             ingredient = Ingredient.objects.get(pk=pk)
         except Ingredient.DoesNotExist:
             return Response({"message": "Ingredient not found"}, status=404)
-
-        
-
+  
         serializer = IngredientSerializer(ingredient)
         return Response(serializer.data)
             
@@ -53,6 +53,7 @@ class IngredientDetailView(APIView):
             return Response({"message": "Ingredient not found"}, status=404)
         
         serializer = IngredientSerializer(ingredient, data=request.data, partial=True)
+        
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data, status=status.HTTP_200_OK)
@@ -66,7 +67,8 @@ class IngredientDetailView(APIView):
             return Response({"message": "Ingredient not found"}, status=404)
         ingredient.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
-
+    
+'''
 class IngredientBulkView(APIView):
 
     def post(self, request):
@@ -79,15 +81,14 @@ class IngredientBulkView(APIView):
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         else:
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+'''
 
 class FoodView(APIView):
 
     def get(self, request):
-
+        
         foods = Food.objects.all()
-
         foods = filterFood(request, foods)
-        print(len(foods))
 
         serializer = FoodSerializer(foods, many=True)
         return Response(serializer.data)
@@ -97,38 +98,40 @@ class FoodView(APIView):
         data = request.data
 
         if "ingredients" in data and "subfoods" in data:
-            return Response({"message": "you should send ingredients or subfoods"}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"message": "you should send ingredients OR subfoods"}, status=status.HTTP_400_BAD_REQUEST)
 
         if "ingredients" in data:
-            ingredients = ingredientsSummarize(data["ingredients"])
-            print(ingredients)
-            return Response(status=status.HTTP_200_OK)
+            nutrients = ingredientsSummarize(data["ingredients"])
+            data.update(nutrients)
+            data['ingredients'] = json.dumps(data['ingredients'])
+        
         elif "subfoods" in data:
-            print("subfood")
+            nutrients = subfoodsSummarize(data["subfoods"])
+            data.update(nutrients)
+            data['subfoods'] = json.dumps(data['subfoods'])
         else:
-            return Response({"message": "you should send ingredients or subfoods"}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"message": "you should send either ingredients or subfoods"}, status=status.HTTP_400_BAD_REQUEST)
 
         serializer = FoodSerializer(data=data)
+        
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         else:
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+
 class FoodDetailView(APIView):
 
     def get(self, request, pk):
 
         try:
-            food = food.objects.get(pk=pk)
+            food = Food.objects.get(pk=pk)
         except food.DoesNotExist:
             return Response({"message": "food not found"}, status=404)
 
-        
-
         serializer = FoodSerializer(food)
-        return Response(serializer.data)
-            
+        return Response(serializer.data)      
     
     def patch(self, request, pk):
 
@@ -136,8 +139,17 @@ class FoodDetailView(APIView):
             food = Food.objects.get(pk=pk)
         except food.DoesNotExist:
             return Response({"message": "food not found"}, status=404)
-        
-        serializer = FoodSerializer(food, data=request.data, partial=True)
+
+        if not food.ingredients:
+            serializer = FoodSerializer(food, data=request.data, partial=True)
+        else:
+            ingredients = json.loads(food.ingredients)
+            nutrients = ingredientsSummarize(ingredients)
+            new_data = request.data
+            new_data.update(nutrients)
+            new_data['ingredients'] = json.dumps(new_data['ingredients'])
+            serializer = FoodSerializer(food, data=new_data, partial=True)
+            
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data, status=status.HTTP_200_OK)
@@ -146,7 +158,7 @@ class FoodDetailView(APIView):
     def delete(self, request, pk):
 
         try:
-            food = food.objects.get(pk=pk)
+            food = Food.objects.get(pk=pk)
         except food.DoesNotExist:
             return Response({"message": "food not found"}, status=404)
         food.delete()
