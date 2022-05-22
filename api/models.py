@@ -1,7 +1,11 @@
 from pyexpat import model
 from django.db import models
+from django.utils.translation import gettext_lazy as _
 
-# Create your models here.
+'''class Unit(models.Model):
+    name = models.CharField(max_length=20)
+    volume = models.CharField(max_length=20, null=True, blank=True, default=None)
+'''
 class Ingredient(models.Model):
 
     class Meta:
@@ -11,16 +15,26 @@ class Ingredient(models.Model):
     image = models.FileField(upload_to="media/", null=True, blank=True, default=None)
 
     name = models.CharField(max_length=100)
-    group = models.CharField(max_length=50)
-    subgroup = models.CharField(max_length=50, null=True, blank=True)
-    origin = models.CharField(max_length=50, null=True, blank=True)
-    commercial_section = models.CharField(max_length=50, null=True, blank=True)
-    #allowed_units = models.TextField()
-
+    '''presentation = models.CharField(max_length=100)    
+    class Cook(models.TextChoices):
+        RAW = 'raw', _('RAW')
+        BAKED = 'baked', _('BAKED')
+        FRIED = 'fried', _('FRIED')
+        BOILED = 'boiled', _('BOILED')
+        STEAMED = 'steamed', _('STEAMED')
+        GRILLED = 'grilled', _('GRILLED')
+    cooking = models.CharField(max_length=10, choices=Cook.choices, default=Cook.RAW)'''
+    #allowed_units = models.ManyToManyField(Unit, related_name='units')
     edible_ptc = models.FloatField(default=1.0)
     density = models.FloatField(null=True, blank=True)
     unit_weight = models.FloatField(null=True, blank=True)
     price_per_gram = models.FloatField(null=True, blank=True)
+    
+    group = models.CharField(max_length=50)
+    subgroup = models.CharField(max_length=50, null=True, blank=True)
+    origin = models.CharField(max_length=50, null=True, blank=True)
+    commercial_section = models.CharField(max_length=50, null=True, blank=True)
+    
     calories = models.FloatField()
     proteins = models.FloatField()
     water = models.FloatField(null=True, blank=True)

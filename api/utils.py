@@ -1,6 +1,14 @@
+from logging import raiseExceptions
 from numpy import NaN
 from .models import Ingredient, Food
 from .serializers import IngredientSerializer, FoodSerializer
+from rest_framework.exceptions	import APIException, NotFound, ValidationError
+
+class CustomErrors(APIException):
+  status_code = 404
+  default_detail = "Something happen here, look out you moron"
+  
+
 
 def filterIngredients(request, ingredients):
   '''
@@ -59,6 +67,7 @@ def filterFood(request, foods):
     
   return foods
 
+# Esto lo vamos separar en un archivo para que sirva para traerlo y ademas para que popule tablas Unit
 
 conversion = {
     #"kg": 1000,
@@ -76,33 +85,37 @@ def ingredientsSummarize(ingredients):
     Receives: ingredients from data object (list of dicts)
     Returns: nutrients of the food (dict)
     '''
+    print("ingredients que recibe: ", ingredients)
     serialized_ingredients = []
     amounts = []
     
     for ingredient in ingredients:
-        
         try:
             ingredient_info = Ingredient.objects.get(pk=ingredient["id"])
-        except:
-            return print("One or more ingredients were not found")
-
-        try:
-            test = 10 / ingredient["amount"]
-        except:
-            return print("amount must be an int or a float greater than 0")   
-         
+        except Ingredient.DoesNotExist:
+            raise NotFound(detail="One or more ingredients were not found")
+        except Exception:
+            # handling unexpected error
+            raise
+        
+        amount = ingredient['amount']  
+        if str(amount).isnumeric() and float(amount)>0:
+            amount = float(amount)
+        else:
+            raise ValidationError(detail = {"detail": "amount must be an int or a float greater than 0"})
+    
         unit = ingredient["unit"]
 
         if unit == 'g':
-            amount_in_gr = float(ingredient["amount"])
+            amount_in_gr = amount
         elif unit == "kg":
-            amount_in_gr = float(ingredient["amount"]) * 1000
+            amount_in_gr = amount * 1000
         elif unit == "unidades":
-            amount_in_gr = float(ingredient["amount"]) * ingredient_info.unit_weight
+            amount_in_gr = amount * ingredient_info.unit_weight
         elif unit in conversion.keys():
-            amount_in_gr = ingredient["amount"] * conversion[unit] * ingredient_info.density
+            amount_in_gr = amount * conversion[unit] * ingredient_info.density
         else:
-            return print("Unit is not allowed or was not sent")
+            raise NotFound(detail="Unit is not allowed or was not sent")
 
         serialized = IngredientSerializer(ingredient_info).data
 
@@ -138,12 +151,12 @@ def subfoodsSummarize(subfoods):
         try:
             subfood_info = Food.objects.get(pk=subfood["id"])
         except:
-            return print("one or more subfoods were not found")
+            raise NotFound(detail="one or more subfoods were not found")
         
         try:
             portions = subfood["portions"]
         except:
-            return print("You should specify how many portions you take from a subfood")
+            raise NotFound(detail="You should specify how many portions you take from a subfood")
 
         serialized = FoodSerializer(subfood_info).data
         del serialized["id"]
