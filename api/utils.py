@@ -69,8 +69,11 @@ def filterFood(request, foods):
 
 # Esto lo vamos separar en un archivo para que sirva para traerlo y ademas para que popule tablas Unit
 
+# mililiters equivalent
 conversion = {
-    #"kg": 1000,
+    "ml": 1,
+    "cm3": 1,
+    "lts": 1000,
     "cuchara té": 5,
     "cuchara postre": 15,
     "cuchara sopera": 30,
