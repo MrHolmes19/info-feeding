@@ -8,7 +8,11 @@ import os
 Pair = namedtuple("Pair", "old new")
 
 pairs = [
-    Pair("Alimento", "name"),
+    Pair("Alimento", "old_name"),
+    Pair("ingredient name", "name"),
+    Pair("unit weight", "unit_weight"),
+    Pair("allowed units", "allowed_units"),
+    Pair("edible pct", "edible_pct"),
     Pair("Energía", "calories"),
     Pair("Agua", "water"),
     Pair("Proteínas", "proteins"),

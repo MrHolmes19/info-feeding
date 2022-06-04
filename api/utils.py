@@ -1,5 +1,5 @@
 from logging import raiseExceptions
-from numpy import NaN
+#from numpy import NaN
 from .models import Ingredient, Food
 from .serializers import IngredientSerializer, FoodSerializer
 from rest_framework.exceptions	import APIException, NotFound, ValidationError
@@ -130,8 +130,9 @@ def ingredientsSummarize(ingredients):
     for i, ing in enumerate(serialized_ingredients):
         for k in ing.keys():
             if type(ing[k]) in [int, float]:
+
                 #print(f"{k} voy a sumar: {type(total_nutrients.get(k, 0))} + {type(ing[k])}*{type(amounts[i])}")
-                total_nutrients[k] = round(total_nutrients.get(k, 0) + (float(ing[k])* amounts[i] / 100),2)
+                total_nutrients[k] = round(total_nutrients.get(k, 0) + (float(ing[k])* amounts[i] * float(ing["edible_ptc"]) / 100),2)
                 ## AGREGAR MULTIPLICACION POR EDIBLE_PTC
             #else:
                 #print(f"no pasó {k}")
@@ -182,3 +183,28 @@ def subfoodsSummarize(subfoods):
     
     return total_nutrients
 
+def group_by_name(data):
+    """
+    returns a list with no repeated names, with its posible units and presentations
+    """
+    # This loop generates de set of ingredients names whit its units and presentations (repeated)
+    data_result = {}
+    for ing in data:
+        if ing["name"] not in data_result:
+            data_result[ing["name"]] = {}
+        if ing["allowed_units"] not in data_result[ing["name"]]:
+            data_result[ing["name"]][ing["allowed_units"]] = []
+        data_result[ing["name"]][ing["allowed_units"]].append(
+            {"presentation": ing["presentation"], 
+            "unit_weight": ing["unit_weight"]}
+        )
+    
+    # deleting repeated values for presentations (set of presentation)
+    for ingredient in data_result.keys():
+        print("data:", data_result)
+        for unit in data_result[ingredient].keys():
+            L = data_result[ingredient][unit]
+
+            data_result[ingredient][unit] = {v["presentation"]:v for v in L}.values()
+
+    return data_result

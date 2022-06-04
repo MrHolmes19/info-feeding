@@ -16,7 +16,8 @@ class IngredientViewSet(viewsets.ModelViewSet):
     def list(self, request):       
         ingredients = filterIngredients(request, self.queryset)
         serializer = self.serializer_class(ingredients, many=True)
-        return Response(serializer.data)
+        data = group_by_name(serializer.data)
+        return Response(data)
 
 class FoodsViewSet(viewsets.ModelViewSet):
     serializer_class = FoodSerializer

@@ -35,6 +35,11 @@ class Ingredient(models.Model):
     origin = models.CharField(max_length=50, null=True, blank=True)
     commercial_section = models.CharField(max_length=50, null=True, blank=True)
     
+    presentation = models.CharField(max_length=50, null=True, blank=True)
+    cooking = models.CharField(max_length=50, null=True, blank=True)
+    description = models.CharField(max_length=255, null=True, blank=True)
+    allowed_units = models.TextField(null=True, blank=True)
+
     calories = models.FloatField()
     proteins = models.FloatField()
     water = models.FloatField(null=True, blank=True)
