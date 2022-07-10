@@ -90,16 +90,17 @@ class Food(models.Model):
 
     name = models.CharField(max_length=100)
     description = models.TextField(null=True, blank=True)
-    author = models.CharField(max_length=100, default=None, null=True)
-    cooking_time = models.FloatField(null=True, blank=True)
-    difficulty = models.FloatField(null=True, blank=True)
     portions = models.FloatField()
+    author = models.CharField(max_length=100, default=None, null=True)
+    cooking_type = models.FloatField(null=True, blank=True)    
+    difficulty = models.FloatField(null=True, blank=True)    
     recipe = models.TextField(null=True, blank=True)
+    cooking_time = models.FloatField(null=True, blank=True)
     image = models.FileField(upload_to="media/", null=True)
     total_price = models.FloatField(null=True, blank=True)
     type = models.CharField(max_length=50, null=True, blank=True)
     group = models.CharField(max_length=50, null=True, blank=True)
-
+    # Agregar campo de apto para celiacos, etc.
     ingredients = models.TextField(null=True, blank=True)
 
     subfoods = models.TextField(null=True, blank=True)

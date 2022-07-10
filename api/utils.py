@@ -183,28 +183,41 @@ def subfoodsSummarize(subfoods):
     
     return total_nutrients
 
+
 def group_by_name(data):
     """
     returns a list with no repeated names, with its posible units and presentations
     """
-    # This loop generates de set of ingredients names whit its units and presentations (repeated)
-    data_result = {}
+    data_result = []
     for ing in data:
-        if ing["name"] not in data_result:
-            data_result[ing["name"]] = {}
-        if ing["allowed_units"] not in data_result[ing["name"]]:
-            data_result[ing["name"]][ing["allowed_units"]] = []
-        data_result[ing["name"]][ing["allowed_units"]].append(
-            {"presentation": ing["presentation"], 
-            "unit_weight": ing["unit_weight"]}
-        )
-    
-    # deleting repeated values for presentations (set of presentation)
-    for ingredient in data_result.keys():
-        print("data:", data_result)
-        for unit in data_result[ingredient].keys():
-            L = data_result[ingredient][unit]
-
-            data_result[ingredient][unit] = {v["presentation"]:v for v in L}.values()
-
+        ## Checking if ingredient was already stored
+        ing_exist = False
+        for stored_ing in data_result:
+            if ing["name"] in stored_ing["name"]:
+                ing_exist = True
+                break
+        ## Defines presentation info about this ingredient
+        presentation = {          
+            "presentation": ing["presentation"],
+            "unit_weight": ing["unit_weight"],
+            "allowed_units": ing["allowed_units"].split(",") if ing["allowed_units"] else None # TODO: Change this
+        }
+        ## If ingredient is new, append ingredient and its presentation
+        if not ing_exist:
+            ing_result = {
+                "name": ing["name"],
+                "presentations": [presentation]
+            }
+            data_result.append(ing_result)
+        else:
+            ## Check if this presentation was already stored in the ingredient (come repeated cause of cooking condition)
+            existing_ing = list(filter(lambda x: x["name"]==ing["name"], data_result))[0]
+            pres_exist = False
+            for pres in existing_ing["presentations"]:
+                if presentation["presentation"] == pres["presentation"]:
+                    pres_exist = True
+            ## If presentation is new, append to presentation list
+            if not pres_exist:
+                existing_ing["presentations"].append(presentation)
+                    
     return data_result
