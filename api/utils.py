@@ -3,6 +3,7 @@ from logging import raiseExceptions
 from .models import Ingredient, Food
 from .serializers import IngredientSerializer, FoodSerializer
 from rest_framework.exceptions	import APIException, NotFound, ValidationError
+from django.db.models import Q
 
 class CustomErrors(APIException):
   status_code = 404
@@ -82,21 +83,39 @@ conversion = {
 }
 
 
-def ingredientsSummarize(ingredients):
+def ingredientsSummarize(ingredients, cooking="crud"):
     '''
     Sum all nutrients of each ingredient involved
     Receives: ingredients from data object (list of dicts)
     Returns: nutrients of the food (dict)
     '''
+
+    """ngredients que recibe:  [
+    {'name': 'Papa, sin cascara', 'amount': '1000', 'unit': 'gr', 'presentation': 'por peso'}, 
+    {'name': 'Berenjena, alargada', 'amount': '2', 'unit': 'un', 'presentation': 'mediana'}, 
+    {'name': 'Zapallito, sin cascara', 'amount': '4', 'unit': 'un', 'presentation': 'pieza'}]
+    """
+
     print("ingredients que recibe: ", ingredients)
     serialized_ingredients = []
     amounts = []
     
     for ingredient in ingredients:
         try:
-            ingredient_info = Ingredient.objects.get(pk=ingredient["id"])
+            ingredient_info = Ingredient.objects.get(cooking__contains=cooking, 
+                                                    name=ingredient["name"], 
+                                                    presentation=ingredient["presentation"],
+                                                    )
+            print("resultado: ",ingredient_info)
         except Ingredient.DoesNotExist:
-            raise NotFound(detail="One or more ingredients were not found")
+            try:
+                ingredient_info = Ingredient.objects.filter(
+                                                    name=ingredient["name"], 
+                                                    presentation=ingredient["presentation"],
+                                                    ).first()
+            except Ingredient.DoesNotExist:
+                raise NotFound(detail="One or more ingredients were not found")
+
         except Exception:
             # handling unexpected error
             raise
@@ -109,16 +128,16 @@ def ingredientsSummarize(ingredients):
     
         unit = ingredient["unit"]
 
-        if unit == 'g':
+        if unit == 'gr':
             amount_in_gr = amount
         elif unit == "kg":
             amount_in_gr = amount * 1000
-        elif unit == "unidades":
+        elif unit in ["unidades", "un", "unit"]:
             amount_in_gr = amount * ingredient_info.unit_weight
         elif unit in conversion.keys():
             amount_in_gr = amount * conversion[unit] * ingredient_info.density
         else:
-            raise NotFound(detail="Unit is not allowed or was not sent")
+            raise ValidationError(detail=f"Unit is not allowed or was not sent: {unit}")
 
         serialized = IngredientSerializer(ingredient_info).data
 

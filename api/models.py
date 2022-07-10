@@ -92,7 +92,7 @@ class Food(models.Model):
     description = models.TextField(null=True, blank=True)
     portions = models.FloatField()
     author = models.CharField(max_length=100, default=None, null=True)
-    cooking_type = models.FloatField(null=True, blank=True)    
+    cooking_type = models.CharField(max_length=50) #todo: choices
     difficulty = models.FloatField(null=True, blank=True)    
     recipe = models.TextField(null=True, blank=True)
     cooking_time = models.FloatField(null=True, blank=True)

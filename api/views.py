@@ -31,7 +31,7 @@ class FoodsViewSet(viewsets.ModelViewSet):
     
 
     def create(self, request):
-        
+
         data = request.data
 
         if "ingredients" in data and "subfoods" in data:
@@ -39,7 +39,7 @@ class FoodsViewSet(viewsets.ModelViewSet):
 
         if "ingredients" in data:
 
-            nutrients = ingredientsSummarize(data["ingredients"])
+            nutrients = ingredientsSummarize(data["ingredients"], data["cooking_type"])
             print("data: ", data)
             print("nutrients: ", nutrients)
             data.update(nutrients)
