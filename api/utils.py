@@ -113,25 +113,26 @@ def ingredientsSummarize(ingredients, cooking="crud"):
             # print("resultado: ",ingredient_info)
             
         except Ingredient.DoesNotExist:
-            try:
-                ingredient_info = Ingredient.objects.filter(
+            ingredient_info = Ingredient.objects.filter(
                                                     name=ingredient["name"], 
                                                     presentation=ingredient["presentation"],
                                                     ).first()
-            except Ingredient.DoesNotExist:
-                raise NotFound(detail="One or more ingredients were not found")
+            if not ingredient_info:
+                raise NotFound(detail=f"One or more ingredients were not found: {ingredient['name']}, presentacion: {ingredient['presentation']}")
         
         except Exception:
             # handling unexpected error
             raise
         
         ## Add origin, group and subgroup for classifications
-        
-        origins_ingredients.add(ingredient_info.origin)
-        groups_ingredients.add(ingredient_info.group)
-        subgroups_ingredients.add(ingredient_info.subgroup) 
-        names.append(ingredient_info.name)       
-        
+        try:
+            origins_ingredients.add(ingredient_info.origin)
+            groups_ingredients.add(ingredient_info.group)
+            subgroups_ingredients.add(ingredient_info.subgroup) 
+            names.append(ingredient_info.name)       
+        except:
+            print(ingredient_info)
+            raise ValidationError
         amount = ingredient['amount']  
         if str(amount).isnumeric() and float(amount)>0:
             amount = float(amount)
@@ -235,8 +236,23 @@ def ClassificateFood(data, classification_info):
                 break
     # data.kosher = True if "cerdo, conejo, liebre" not in classification_info["subgroups"] else False
     # Estos hdp son bien jodidos. Usar una libreria de kosher detection
-    
-      
+    #  {  diabetic : ""
+    #     cetogenic : ""
+    #     cardiac : ""
+    #     hypertensive : ""
+    #     atherosclerosis : }
+
+    print("data: ", data)
+    diabetic_limits = {
+        "total_carbohydrates" : 20,
+        "total_fats": 5,
+        "total_cholesterol": 5,
+        "saturated_fats": 2,
+        "sugar": 3,
+        "min_proteins": 10,
+        "sodium": 1
+    }
+    # todo: calcular peso total del plato
     
     
     
@@ -253,7 +269,7 @@ def group_by_name(data):
         ## Checking if ingredient was already stored
         ing_exist = False
         for stored_ing in data_result:
-            if ing["name"] in stored_ing["name"]:
+            if ing["name"] == stored_ing["name"]:
                 ing_exist = True
                 break
         ## Defines presentation info about this ingredient
@@ -271,7 +287,11 @@ def group_by_name(data):
             data_result.append(ing_result)
         else:
             ## Check if this presentation was already stored in the ingredient (come repeated cause of cooking condition)
-            existing_ing = list(filter(lambda x: x["name"]==ing["name"], data_result))[0]
+            try:
+                existing_ing = list(filter(lambda x: ing["name"] == x["name"], data_result))[0]
+            except IndexError:
+                print("Error:", ing)
+                raise ValidationError({"ing": ing, "x":data_result})
             pres_exist = False
             for pres in existing_ing["presentations"]:
                 if presentation["presentation"] == pres["presentation"]:
