@@ -96,14 +96,24 @@ class Food(models.Model):
     difficulty = models.FloatField(null=True, blank=True)    
     recipe = models.TextField(null=True, blank=True)
     cooking_time = models.FloatField(null=True, blank=True)
-    image = models.FileField(upload_to="media/", null=True)
+    image = models.FileField(upload_to="media/", null=True, blank=True)
     total_price = models.FloatField(null=True, blank=True)
     type = models.CharField(max_length=50, null=True, blank=True)
     group = models.CharField(max_length=50, null=True, blank=True)
-    # Agregar campo de apto para celiacos, etc.
-    ingredients = models.TextField(null=True, blank=True)
 
+    ingredients = models.TextField(null=True, blank=True)
     subfoods = models.TextField(null=True, blank=True)
+    
+    vegan = models.BooleanField(default=False)
+    veggie = models.BooleanField(default=False)
+    lactose_intolerant = models.BooleanField(default=False)
+    kosher = models.BooleanField(default=False)
+    celiac = models.BooleanField(default=False)
+    diabetic = models.BooleanField(default=False)
+    cetogenic = models.BooleanField(default=False)
+    cardiac = models.BooleanField(default=False)
+    hypertensive = models.BooleanField(default=False)
+    atherosclerosis = models.BooleanField(default=False)
 
     calories = models.FloatField()
     proteins = models.FloatField()

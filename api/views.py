@@ -31,27 +31,30 @@ class FoodsViewSet(viewsets.ModelViewSet):
     
 
     def create(self, request):
-
+        # print("--->>>> REQUEST: ", request.FILES)
         data = request.data
-
+        # print("--->>>> DATA: ", request.data)
         if "ingredients" in data and "subfoods" in data:
             return Response({"message": "you should send ingredients OR subfoods"}, status=status.HTTP_400_BAD_REQUEST)
 
         if "ingredients" in data:
-
-            nutrients = ingredientsSummarize(data["ingredients"], data["cooking_type"])
+            nutrients, classification_info = ingredientsSummarize(data["ingredients"], data["cooking_type"])
             print("data: ", data)
             print("nutrients: ", nutrients)
+            ## Eliminar doble paso
             data.update(nutrients)
             data['ingredients'] = json.dumps(data['ingredients'])
         
         elif "subfoods" in data:
+            ## TODO: bring classification_info from foods
             nutrients = subfoodsSummarize(data["subfoods"])
             data.update(nutrients)
             data['subfoods'] = json.dumps(data['subfoods'])
         else:
             return Response({"message": "you should send either ingredients or subfoods"}, status=status.HTTP_400_BAD_REQUEST)
 
+        data = ClassificateFood(data, classification_info)
+        print("data que sale del classificate food: ", data)
         serializer = FoodSerializer(data=data)
         
         if serializer.is_valid():

@@ -42,7 +42,7 @@ def convert_colums(columns, pairs):
 def xls_to_json(filename):
 
     pd.set_option("display.max_rows", None, "display.max_columns", None)
-    df = pd.DataFrame(pd.read_excel("data/"+filename)) # , engine='openpyxl'
+    df = pd.DataFrame(pd.read_excel("data/"+filename, engine='openpyxl')) # , engine='openpyxl'
 
     columns = df.iloc[1]
 
@@ -68,7 +68,7 @@ def xls_to_json(filename):
 
     ing_dir = df.to_dict(orient='records')
 
-    with open("data_json/"+filename.replace(".xls", ".json"), "w", encoding="utf-8") as f:
+    with open("data_json/"+filename.replace(".xlsx", ".json"), "w", encoding="utf-8") as f:
         json.dump(ing_dir, f, indent=4, ensure_ascii=False)
 
 

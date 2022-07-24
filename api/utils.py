@@ -87,10 +87,10 @@ def ingredientsSummarize(ingredients, cooking="crud"):
     '''
     Sum all nutrients of each ingredient involved
     Receives: ingredients from data object (list of dicts)
-    Returns: nutrients of the food (dict)
+    Returns: nutrients of the food (dict) AND origins,groups and subgroups for future classification
     '''
 
-    """ngredients que recibe:  [
+    """Ingredients que recibe:  [
     {'name': 'Papa, sin cascara', 'amount': '1000', 'unit': 'gr', 'presentation': 'por peso'}, 
     {'name': 'Berenjena, alargada', 'amount': '2', 'unit': 'un', 'presentation': 'mediana'}, 
     {'name': 'Zapallito, sin cascara', 'amount': '4', 'unit': 'un', 'presentation': 'pieza'}]
@@ -99,6 +99,10 @@ def ingredientsSummarize(ingredients, cooking="crud"):
     print("ingredients que recibe: ", ingredients)
     serialized_ingredients = []
     amounts = []
+    origins_ingredients = set()
+    subgroups_ingredients = set()
+    groups_ingredients = set()
+    names = []
     
     for ingredient in ingredients:
         try:
@@ -106,7 +110,8 @@ def ingredientsSummarize(ingredients, cooking="crud"):
                                                     name=ingredient["name"], 
                                                     presentation=ingredient["presentation"],
                                                     )
-            print("resultado: ",ingredient_info)
+            # print("resultado: ",ingredient_info)
+            
         except Ingredient.DoesNotExist:
             try:
                 ingredient_info = Ingredient.objects.filter(
@@ -115,10 +120,17 @@ def ingredientsSummarize(ingredients, cooking="crud"):
                                                     ).first()
             except Ingredient.DoesNotExist:
                 raise NotFound(detail="One or more ingredients were not found")
-
+        
         except Exception:
             # handling unexpected error
             raise
+        
+        ## Add origin, group and subgroup for classifications
+        
+        origins_ingredients.add(ingredient_info.origin)
+        groups_ingredients.add(ingredient_info.group)
+        subgroups_ingredients.add(ingredient_info.subgroup) 
+        names.append(ingredient_info.name)       
         
         amount = ingredient['amount']  
         if str(amount).isnumeric() and float(amount)>0:
@@ -145,19 +157,21 @@ def ingredientsSummarize(ingredients, cooking="crud"):
         serialized_ingredients.append(serialized)
         amounts.append(amount_in_gr)
 
+    classification_info = {"origins" : origins_ingredients, 
+                           "subgroups": subgroups_ingredients, 
+                           "groups": groups_ingredients,
+                           "names": names
+                        }
+
     total_nutrients = {}
     for i, ing in enumerate(serialized_ingredients):
         for k in ing.keys():
             if type(ing[k]) in [int, float]:
-
                 #print(f"{k} voy a sumar: {type(total_nutrients.get(k, 0))} + {type(ing[k])}*{type(amounts[i])}")
                 total_nutrients[k] = round(total_nutrients.get(k, 0) + (float(ing[k])* amounts[i] * float(ing["edible_ptc"]) / 100),2)
-                ## AGREGAR MULTIPLICACION POR EDIBLE_PTC
-            #else:
-                #print(f"no pasó {k}")
     
-    del total_nutrients["edible_ptc"]
-    return total_nutrients
+    del total_nutrients["edible_ptc"] # "unit_weight"
+    return (total_nutrients, classification_info)
         
 
 def subfoodsSummarize(subfoods):
@@ -201,6 +215,33 @@ def subfoodsSummarize(subfoods):
     print("total_nutrientes: ", total_nutrients)
     
     return total_nutrients
+
+
+def ClassificateFood(data, classification_info):
+    '''
+    Return data with new classification fields (as veggie, vegetarian, etc.)
+    '''
+    
+    data["vegan"] = True if "animal" not in classification_info["origins"] else False
+    data["veggie"] = True if "carnes rojas" not in classification_info["groups"] \
+                  or "carnes blancas" not in classification_info["groups"] else False
+    data["lactose_intolerant"] = True if "lacteos" not in classification_info["groups"] else False
+    
+    data["celiac"] = True
+    for element in ["avena", "cebada", "centeno", "trigo"]:
+        for name in classification_info["names"]:
+            if element in name:
+                data["celiac"] = False
+                break
+    # data.kosher = True if "cerdo, conejo, liebre" not in classification_info["subgroups"] else False
+    # Estos hdp son bien jodidos. Usar una libreria de kosher detection
+    
+      
+    
+    
+    
+    return data
+
 
 
 def group_by_name(data):
